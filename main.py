@@ -5,7 +5,7 @@ import numpy as np
 def clearFrame(frame):
     for widget in frame.winfo_children():
         widget.destroy()
-global in_menu,in_game,n,m,rectangle_center,cells,first_click,no_bombs
+global in_menu,in_game,n,m,rectangle_center,cells,first_click,no_bombs,bombs
 def generate_random(i,j):
     available=[t for t in range(n*m) if t!=i*m+j]
     bombs=[]
@@ -16,7 +16,7 @@ def generate_random(i,j):
         bombs.append((next_bomb//m,next_bomb%m))
     return bombs
 def reveal(event):
-    global n,m,rectangle_center,cells,first_click
+    global n,m,rectangle_center,cells,first_click,bombs
     if in_game==1:
         abs_x= root.winfo_pointerx() - root.winfo_rootx()
         abs_y= root.winfo_pointery() - root.winfo_rooty()
@@ -24,9 +24,13 @@ def reveal(event):
             i=int(abs_y/800*n)
             j=int(abs_x/(0.8*1600)*m)
             if first_click!=1:
-                print(generate_random(i,j))
-            first_click=1
-            print(i,j)
+                index_bombs=generate_random(i,j)
+                bombs=np.zeros((n,m))
+                for k in index_bombs:
+                    bombs[k[0],k[1]]=1
+                first_click=1
+            if bombs[i,j] == 1:
+                print("Game over!")
             cells[i][j]=Button(root,text="1").place(relheight=1/n,relwidth=0.8/m,relx=j*0.8/n,rely=i*1/m)
 def buildGame(n,m):
     rectangle_center=[]
