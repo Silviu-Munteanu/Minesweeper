@@ -15,6 +15,17 @@ def generate_random(i,j):
         available.remove(available[r_index])
         bombs.append((next_bomb//m,next_bomb%m))
     return bombs
+def check_neighbors(i,j):
+    global bombs
+    no_n=0
+    print(bombs)
+    for k in range(-1,2,1):
+        for p in range(-1,2,1):
+            print(i+k,j+p)
+            if i+k<n and j+p<m:
+                if bombs[i+k,j+p] == 1 and (k!=0 or p!=0):
+                    no_n+=1
+    return no_n
 def reveal(event):
     global n,m,rectangle_center,cells,first_click,bombs
     if in_game==1:
@@ -31,7 +42,12 @@ def reveal(event):
                 first_click=1
             if bombs[i,j] == 1:
                 print("Game over!")
-            cells[i][j]=Button(root,text="1").place(relheight=1/n,relwidth=0.8/m,relx=j*0.8/n,rely=i*1/m)
+          #  for i in range(n):
+               # for j in range(m):
+                   # reveal_cell()
+            n_neighbors=check_neighbors(i,j)
+            print(n_neighbors)
+            cells[i][j]=Button(root,text=str(n_neighbors)).place(relheight=1/n,relwidth=0.8/m,relx=j*0.8/m,rely=i*1/n)
 def buildGame(n,m):
     rectangle_center=[]
     global in_menu,in_game,cells
@@ -44,7 +60,7 @@ def buildGame(n,m):
     for i in range(n):
        cells.append([])
        for j in range(m):
-           cells[i].append(Button(root).place(relheight=1/n,relwidth=0.8/m,relx=j*0.8/n,rely=i*1/m))
+           cells[i].append(Button(root).place(relheight=1/n,relwidth=0.8/m,relx=j*0.8/m,rely=i*1/n))
 def buildMenu():
     global in_menu,in_game,n,m
     in_menu=1
@@ -72,7 +88,7 @@ def play(n_text,m_text):
     n=int(n)
     m=int(m)
     buildGame(n,m)
-no_bombs=8
+no_bombs=2
 first_click=0
 root = Tk()
 root.title("Minesweeper")
