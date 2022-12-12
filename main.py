@@ -3,6 +3,7 @@ from tkinter import *
 import math
 import numpy as np
 from apscheduler.schedulers.background import BackgroundScheduler
+from collections import deque
 def game_won():
     global n,m,bombs,revealed
     for i in range(n):
@@ -11,24 +12,29 @@ def game_won():
                 return False
     return True
 def format_time(time):
-    hours=time//3600
-    time-=hours * 3600
-    hours=str(hours)
-    if len(hours) == 1:
-        hours = "0" + hours
-    minutes=time//60
-    time -= minutes * 60
-    minutes=str(minutes)
-    if len(minutes) == 1:
-        minutes= "0" + minutes
-    time = str(time)
-    if len(time) == 1:
-        time= "0" + time
-    return hours + ":" + minutes + ":" + time
+    if time >= 0:
+        hours=time//3600
+        time-=hours * 3600
+        hours=str(hours)
+        if len(hours) == 1:
+            hours = "0" + hours
+        minutes=time//60
+        time -= minutes * 60
+        minutes=str(minutes)
+        if len(minutes) == 1:
+            minutes= "0" + minutes
+        time = str(time)
+        if len(time) == 1:
+            time= "0" + time
+        return hours + ":" + minutes + ":" + time
 def elapse_second():
-    global time
-    time+=1
+    global time,game_over,scheduler
+    time-=1
     timer = Label(root,text=format_time(time), font=("Arial", 20)).place(x=1350, y=400)
+    if time == 0:
+        Label(root,text="Game over", font=("Arial", 30)).place(x=1300, y=600)
+        game_over = 1
+        scheduler.remove_job('elapse_second')
 def clearFrame(frame):
     for widget in frame.winfo_children():
         widget.destroy()
@@ -114,10 +120,10 @@ def buildGame(n,m):
     global time,scheduler,first_click,game_over
     game_over = 0
     first_click=0
-    time=0
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(elapse_second, 'interval', seconds=1, id='elapse_second')
-    scheduler.start()
+    if time != -1:
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(elapse_second, 'interval', seconds=1, id='elapse_second')
+        scheduler.start()
     global in_menu,in_game,cells,marked,revealed
     marked=np.zeros((n,m))
     revealed=np.zeros((n,m))
@@ -141,22 +147,29 @@ def buildMenu():
     n_t = StringVar()
     m_t = StringVar()
     no_t = StringVar()
-    n_text = Label(root, text="No. rows:", font=("Arial", 30)).place(x=500, y=200)
-    n_entry = Entry(root, textvariable=n_t, font=("Arial", 30)).place(x=700, y=200)
-    m_text = Label(root, text="No. columns:", font=("Arial", 30)).place(x=450, y=400)
-    m_entry = Entry(root, textvariable=m_t, font=("Arial", 30)).place(x=700, y=400)
-    b_text = Label(root, text="No. bombs:", font=("Arial", 30)).place(x=470, y=600)
-    b_entry = Entry(root, textvariable=no_t, font=("Arial", 30)).place(x=700, y=600)
-    start_button = Button(root, command=lambda: play(n_t, m_t,no_t), text="Play", font=("Arial", 30))
+    t_t= StringVar()
+    n_text = Label(root, text="No. rows:", font=("Arial", 30)).place(x=500, y=50)
+    n_entry = Entry(root, textvariable=n_t, font=("Arial", 30)).place(x=700, y=50)
+    m_text = Label(root, text="No. columns:", font=("Arial", 30)).place(x=450, y=250)
+    m_entry = Entry(root, textvariable=m_t, font=("Arial", 30)).place(x=700, y=250)
+    b_text = Label(root, text="No. bombs:", font=("Arial", 30)).place(x=470, y=450)
+    b_entry = Entry(root, textvariable=no_t, font=("Arial", 30)).place(x=700, y=450)
+    t_text = Label(root, text="Time limit in seconds: ", font=("Arial", 30)).place(x=300, y=600)
+    t_entry=Entry(root, textvariable=t_t, font=("Arial", 30)).place(x=700, y=600)
+    start_button = Button(root, command=lambda: play(n_t, m_t,no_t,t_t), text="Play", font=("Arial", 30))
     start_button.place(x=700, y=700)
+
     root.mainloop()
-def play(n_text,m_text,no_t):
-    global n,m,no_bombs
+def play(n_text,m_text,no_t,t_t):
+    global n,m,no_bombs,time
     n=n_text.get()
     m=m_text.get()
     no_bombs=no_t.get()
+    time=t_t.get()
     if len(n) == 0 or len(m) == 0 or len(no_bombs) == 0:
         return False
+    if len(time) == 0:
+        time=-1
     for i in n:
         if i.isdigit() == False:
             return False
@@ -166,9 +179,14 @@ def play(n_text,m_text,no_t):
     for i in no_bombs:
         if i.isdigit() == False:
             return False
+    if time != -1:
+        for i in time:
+            if i.isdigit() == False:
+                return False
     n=int(n)
     m=int(m)
     no_bombs=int(no_bombs)
+    time=int(time)
     buildGame(n,m)
 first_click=0
 root = Tk()
