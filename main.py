@@ -27,6 +27,24 @@ def format_time(time):
         if len(time) == 1:
             time= "0" + time
         return hours + ":" + minutes + ":" + time
+
+def BFS(i, j):
+    q = deque()
+    q.append((i, j))
+    visited=np.zeros((n,m))
+    visited[i, j] = 1
+    while q:
+        c = q.pop()
+        reveal_cell(c[0],c[1])
+        if check_neighbors(c[0],c[1]) == 0:
+            for k in range(-1, 2, 1):
+                for p in range(-1, 2, 1):
+                    if c[0] + k < n and c[1] + p < m and c[0] + k >= 0 and c[1] + p >= 0:
+                       if (k != 0 or p != 0) and visited[c[0]+k,c[1]+p] == 0:
+                          q.append((c[0]+k,c[1]+p))
+                          visited[c[0]+k,c[1]+p] = 1
+
+
 def elapse_second():
     global time,game_over,scheduler
     time-=1
@@ -52,12 +70,10 @@ def generate_random(i,j):
 def check_neighbors(i,j):
     global bombs
     no_n=0
-    print(bombs)
     for k in range(-1,2,1):
         for p in range(-1,2,1):
             if i+k<n and j+p<m and i+k>=0 and j+p>=0:
                 if bombs[i+k,j+p] == 1 and (k!=0 or p!=0):
-                    print(i,j,":",i+k,j+p)
                     no_n+=1
     return no_n
 def mark(event):
@@ -79,6 +95,7 @@ def reveal_cell(i,j):
         cells[i][j] = Button(root, background='red').place(relheight=1 / n, relwidth=0.8 / m, relx=j * 0.8 / m,rely=i * 1 / n)
     else:
         cells[i][j] = Button(root, text=str(check_neighbors(i,j))).place(relheight=1 / n, relwidth=0.8 / m, relx=j * 0.8 / m,rely=i * 1 / n)
+    revealed[i,j]=1
 def reveal(event):
     global n,m,rectangle_center,cells,first_click,bombs,marked,revealed,scheduler,game_over
     if in_game==1 and game_over==0:
@@ -94,16 +111,21 @@ def reveal(event):
                     bombs[k[0],k[1]]=1
                 first_click=1
                 cells[i][j]=Button(root,text=str(check_neighbors(i,j))).place(relheight=1/n,relwidth=0.8/m,relx=j*0.8/m,rely=i*1/n)
+                if check_neighbors(i, j) == 0:
+                    BFS(i, j)
+                    print(revealed)
                 revealed[i,j]=1
                 if game_won() == True:
                     game_over = 1
-                    scheduler.remove_job('elapse_second')
+                    if time!= -1:
+                        scheduler.remove_job('elapse_second')
                     Label(root, text="You won!", font=("Arial", 30)).place(x=1300, y=600)
             elif marked[i,j] == 0:
                 if bombs[i,j] == 1:
                     Label(root,text="Game over", font=("Arial", 30)).place(x=1300, y=600)
                     game_over=1
-                    scheduler.remove_job('elapse_second')
+                    if time!= -1:
+                        scheduler.remove_job('elapse_second')
                     cells[i][j] = Button(root,background='red').place(relheight=1 / n, relwidth=0.8 / m,relx=j * 0.8 / m, rely=i * 1 / n)
                     for i in range(n):
                         for j in range(m):
@@ -111,10 +133,14 @@ def reveal(event):
                 else:
                     if marked[i,j] == 0:
                         cells[i][j]=Button(root,text=str(check_neighbors(i,j))).place(relheight=1/n,relwidth=0.8/m,relx=j*0.8/m,rely=i*1/n)
+                        if check_neighbors(i,j) == 0:
+                            BFS(i,j)
+                            print(revealed)
                         revealed[i, j] = 1
                         if game_won() == True:
                             game_over = 1
-                            scheduler.remove_job('elapse_second')
+                            if time != -1:
+                                scheduler.remove_job('elapse_second')
                             Label(root,text="You won!", font=("Arial", 30)).place(x=1300, y=600)
 def buildGame(n,m):
     global time,scheduler,first_click,game_over
